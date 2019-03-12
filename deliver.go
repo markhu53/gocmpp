@@ -72,6 +72,13 @@ type Cmpp2DeliverReqPkt struct {
 	MsgLength        uint8
 	MsgContent       string
 	Reserve          string
+	//for report
+	OMsgId			uint64
+	Stat			string
+	SubmitTime		string
+	DoneTime		string
+	DestTerminatalId	string
+	SMSC_seq		uint32
 
 	//session info
 	SeqId uint32
@@ -166,8 +173,26 @@ func (p *Cmpp2DeliverReqPkt) Unpack(data []byte) error {
 	p.MsgLength = r.ReadByte()
 
 	msgContent := make([]byte, p.MsgLength)
-	r.ReadBytes(msgContent)
-	p.MsgContent = string(msgContent)
+	if p.RegisterDelivery != 1 { //report
+		r.ReadBytes(msgContent)
+		p.MsgContent = string(msgContent)
+	}else{
+		r.ReadInt(binary.BigEndian, &p.OMsgId)
+
+		stat := r.ReadCString(7)
+		p.Stat = string(stat)
+
+		submit_time := r.ReadCString(10)
+		p.SubmitTime = string(submit_time)
+
+		done_time := r.ReadCString(10)
+		p.DoneTime = string(done_time)
+
+		dest_terminal_id := r.ReadCString(21)
+		p.DestTerminatalId = string(dest_terminal_id)
+
+		r.ReadInt(binary.BigEndian, &p.SMSC_seq)
+	}
 
 	reserve := r.ReadCString(8)
 	p.Reserve = string(reserve)
